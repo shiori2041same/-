@@ -95,6 +95,36 @@ async function startServer() {
 
   app.use(express.json());
 
+  // Request Logging Middleware
+  app.use((req, res, next) => {
+    const logFile = path.join(DATA_DIR, "requests.log");
+    const timestamp = new Date().toISOString();
+    const headersStr = JSON.stringify({
+      host: req.headers.host,
+      "x-forwarded-for": req.headers["x-forwarding-for"],
+      "content-type": req.headers["content-type"],
+    });
+    const logLine = `[${timestamp}] INCOMING: ${req.method} ${req.url} - IP: ${req.ip} - Headers: ${headersStr}\n`;
+    
+    try {
+      fs.appendFileSync(logFile, logLine, "utf8");
+    } catch (e) {
+      console.error("Failed to write incoming log to file:", e);
+    }
+
+    res.on("finish", () => {
+      const endTimestamp = new Date().toISOString();
+      const responseLog = `[${endTimestamp}] OUTGOING: ${req.method} ${req.url} - Status: ${res.statusCode}\n`;
+      try {
+        fs.appendFileSync(logFile, responseLog, "utf8");
+      } catch (e) {
+        console.error("Failed to write outgoing log to file:", e);
+      }
+    });
+    
+    next();
+  });
+
   // Simple Rate Limiting Map
   const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
   app.use((req, res, next) => {
