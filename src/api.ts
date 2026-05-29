@@ -7,21 +7,28 @@ import { User, Achievement, Template } from "./types";
 
 const BASE_URL = "";
 
-// Helper to manage auth token in local storage
+// Helper to manage auth token in local/session storage
 export function getToken(): string | null {
-  return localStorage.getItem("c_memo_token");
+  return localStorage.getItem("c_memo_token") || sessionStorage.getItem("c_memo_token");
 }
 
-export function setToken(token: string): void {
-  localStorage.setItem("c_memo_token", token);
+export function setToken(token: string, remember: boolean = false): void {
+  if (remember) {
+    localStorage.setItem("c_memo_token", token);
+    sessionStorage.removeItem("c_memo_token");
+  } else {
+    sessionStorage.setItem("c_memo_token", token);
+    localStorage.removeItem("c_memo_token");
+  }
 }
 
 export function removeToken(): void {
   localStorage.removeItem("c_memo_token");
+  sessionStorage.removeItem("c_memo_token");
 }
 
 export function getSavedUser(): User | null {
-  const userStr = localStorage.getItem("c_memo_user");
+  const userStr = localStorage.getItem("c_memo_user") || sessionStorage.getItem("c_memo_user");
   if (!userStr) return null;
   try {
     return JSON.parse(userStr) as User;
@@ -30,12 +37,19 @@ export function getSavedUser(): User | null {
   }
 }
 
-export function setSavedUser(user: User): void {
-  localStorage.setItem("c_memo_user", JSON.stringify(user));
+export function setSavedUser(user: User, remember: boolean = false): void {
+  if (remember) {
+    localStorage.setItem("c_memo_user", JSON.stringify(user));
+    sessionStorage.removeItem("c_memo_user");
+  } else {
+    sessionStorage.setItem("c_memo_user", JSON.stringify(user));
+    localStorage.removeItem("c_memo_user");
+  }
 }
 
 export function removeSavedUser(): void {
   localStorage.removeItem("c_memo_user");
+  sessionStorage.removeItem("c_memo_user");
 }
 
 // Global headers injection helper
@@ -104,25 +118,25 @@ async function apiRequest<T>(
 
 // Export specific operations
 export const authApi = {
-  async register(username: string, password: string, secretPhrase?: string) {
+  async register(username: string, password: string, secretPhrase?: string, remember: boolean = false) {
     const data = await apiRequest<{ token: string; user: User }>(
       "/api/auth/register",
       "POST",
       { username, password, secretPhrase }
     );
-    setToken(data.token);
-    setSavedUser(data.user);
+    setToken(data.token, remember);
+    setSavedUser(data.user, remember);
     return data;
   },
 
-  async login(username: string, password: string) {
+  async login(username: string, password: string, remember: boolean = false) {
     const data = await apiRequest<{ token: string; user: User }>(
       "/api/auth/login",
       "POST",
       { username, password }
     );
-    setToken(data.token);
-    setSavedUser(data.user);
+    setToken(data.token, remember);
+    setSavedUser(data.user, remember);
     return data;
   },
 

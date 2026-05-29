@@ -34,6 +34,7 @@ export default function App() {
   const [authMode, setAuthMode] = useState<"login" | "register" | "forgot">("register");
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [rememberMe, setRememberMe] = useState(true);
 
   // Form states for login/register
   const [username, setUsername] = useState("");
@@ -174,7 +175,7 @@ export default function App() {
         if (!username || !password) {
           throw new Error("IDとパスワードは必ず入力してください。");
         }
-        const data = await authApi.register(username, password, secretPhrase);
+        const data = await authApi.register(username, password, secretPhrase, rememberMe);
         setUser(data.user);
         setToken(data.token);
         showToast("今日できたことメモへようこそ！登録完了しました。");
@@ -182,7 +183,7 @@ export default function App() {
         if (!username || !password) {
           throw new Error("IDとパスワードを入力してください。");
         }
-        const data = await authApi.login(username, password);
+        const data = await authApi.login(username, password, rememberMe);
         setUser(data.user);
         setToken(data.token);
         showToast("ログインしました。おかえりなさい！");
@@ -540,10 +541,24 @@ export default function App() {
                       className="w-full px-4 py-3 border-2 border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 rounded-xl animate-fade-in"
                     />
                     <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                      パスワードを忘れたときの再設定のために、あなただけが知っている秘密の言葉（合言葉）を登録できます。
+                      パスワードを忘れたときの再設定のために、あなただけが知っているひみつの言葉（合言葉）を登録できます。
                     </span>
                   </div>
                 )}
+
+                {/* ログイン状態を保存するチェックボックス */}
+                <div className="flex items-center gap-2.5 my-2 p-1.5 select-none rounded-lg border border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/20">
+                  <input
+                    id="remember-me-checkbox"
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="w-5 h-5 accent-amber-500 rounded border-2 border-zinc-300 dark:border-zinc-700 focus:ring-amber-500 cursor-pointer"
+                  />
+                  <label htmlFor="remember-me-checkbox" className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 cursor-pointer select-none">
+                    ログイン状態を保存する（次回から自動ログイン）
+                  </label>
+                </div>
 
                 <button
                   type="submit"
