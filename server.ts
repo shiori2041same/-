@@ -98,7 +98,7 @@ async function startServer() {
   // Simple Rate Limiting Map
   const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
   app.use((req, res, next) => {
-    const ip = (req.headers["x-forwarding-for"] as string) || req.socket.remoteAddress || "unknown";
+    const ip = (req.headers["x-forwarding-for"] as string) || req.ip || req.socket?.remoteAddress || "unknown";
     const now = Date.now();
     const limitWindow = 60000; // 1 minute
     const maxRequests = 200; // Max requests per window

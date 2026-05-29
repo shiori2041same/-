@@ -65,11 +65,38 @@ async function apiRequest<T>(
     config.body = JSON.stringify(body);
   }
 
-  const response = await fetch(`${BASE_URL}${endpoint}`, config);
-  const data = await response.json();
+  let response: Response;
+  try {
+    response = await fetch(`${BASE_URL}${endpoint}`, config);
+  } catch (err: any) {
+    console.error("Network Fetch Error:", err);
+    throw new Error("サーバーとの通信に失敗しました。インターネット接続環境か、開発サーバーの起動状態を確認してください。");
+  }
+
+  let data: any = null;
+  const contentType = response.headers.get("content-type");
+  if (contentType && contentType.includes("application/json")) {
+    try {
+      data = await response.json();
+    } catch (parseErr) {
+      console.error("JSON Parse Error:", parseErr);
+    }
+  } else {
+    try {
+      const text = await response.text();
+      console.warn("Non-JSON Server Response Received:", text);
+    } catch {
+      // Ignore text fetch faults
+    }
+  }
 
   if (!response.ok) {
-    throw new Error(data.error || "通信エラーが発生しました。");
+    const errorMsg = data?.error || `通信エラーが発生しました（ステータスコード: ${response.status}）`;
+    throw new Error(errorMsg);
+  }
+
+  if (data === null) {
+    throw new Error("サーバーから応答データを取得できませんでした。");
   }
 
   return data as T;
